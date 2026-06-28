@@ -37,6 +37,7 @@
       color: var(--text);
       font-family: var(--sans);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     body {
@@ -50,7 +51,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 28px;
+      gap: 18px;
+      padding: 18px clamp(16px, 3vw, 28px);
       border-bottom: 1px solid var(--line);
       background: rgba(10, 14, 15, 0.85);
       backdrop-filter: blur(6px);
@@ -66,6 +68,7 @@
       font-family: var(--mono);
       font-size: 14px;
       letter-spacing: 0.02em;
+      min-width: 0;
     }
 
     .brand .dot {
@@ -97,17 +100,21 @@
       font-family: var(--mono);
       font-size: 12px;
       color: var(--text-dim);
+      flex: 0 0 auto;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .wrap {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 28px;
+      padding: clamp(16px, 3vw, 28px);
+      width: 100%;
     }
 
     .stat-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 14px;
       margin-bottom: 22px;
     }
@@ -119,6 +126,7 @@
       padding: 16px 18px;
       position: relative;
       overflow: hidden;
+      min-width: 0;
     }
 
     .stat::before {
@@ -159,13 +167,13 @@
 
     .grid {
       display: grid;
-      grid-template-columns: 1.4fr 1fr;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
       gap: 16px;
       margin-bottom: 16px;
     }
 
     .grid.three {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .panel {
@@ -173,6 +181,7 @@
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 18px 20px;
+      min-width: 0;
     }
 
     .panel h2 {
@@ -185,11 +194,18 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .panel h2 span:first-child {
+      min-width: 0;
     }
 
     .panel h2 .count {
       color: var(--accent);
       font-weight: 600;
+      flex: 0 0 auto;
     }
 
     .chart-box {
@@ -206,6 +222,7 @@
       border-collapse: collapse;
       font-family: var(--mono);
       font-size: 12.5px;
+      table-layout: fixed;
     }
 
     th {
@@ -217,12 +234,94 @@
       text-transform: uppercase;
       font-size: 10px;
       letter-spacing: 0.06em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     td {
       padding: 7px 8px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.03);
       color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    .break-anywhere {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    #table-creds th:nth-child(1),
+    #table-creds td:nth-child(1) {
+      width: 34%;
+    }
+
+    #table-creds th:nth-child(2),
+    #table-creds td:nth-child(2) {
+      width: 44%;
+    }
+
+    #table-creds th:nth-child(3),
+    #table-creds td:nth-child(3) {
+      width: 22%;
+      text-align: right;
+    }
+
+    #table-web-hits th:nth-child(1),
+    #table-web-hits td:nth-child(1) {
+      width: 28%;
+    }
+
+    #table-web-hits th:nth-child(2),
+    #table-web-hits td:nth-child(2) {
+      width: 32%;
+    }
+
+    #table-web-hits th:nth-child(3),
+    #table-web-hits td:nth-child(3) {
+      width: 18%;
+    }
+
+    #table-web-hits th:nth-child(4),
+    #table-web-hits td:nth-child(4) {
+      width: 22%;
+    }
+
+    #table-connections th:nth-child(1),
+    #table-connections td:nth-child(1) {
+      width: 34%;
+    }
+
+    #table-connections th:nth-child(2),
+    #table-connections td:nth-child(2) {
+      width: 28%;
+    }
+
+    #table-connections th:nth-child(3),
+    #table-connections td:nth-child(3) {
+      width: 38%;
+    }
+
+    #table-commands th:nth-child(1),
+    #table-commands td:nth-child(1) {
+      width: 22%;
+    }
+
+    #table-commands th:nth-child(2),
+    #table-commands td:nth-child(2) {
+      width: 58%;
+    }
+
+    #table-commands th:nth-child(3),
+    #table-commands td:nth-child(3) {
+      width: 20%;
     }
 
     tr:hover td {
@@ -237,6 +336,7 @@
       background: rgba(255, 106, 61, 0.12);
       color: var(--accent);
       border: 1px solid rgba(255, 106, 61, 0.25);
+      white-space: nowrap;
     }
 
     .mono-dim {
@@ -245,7 +345,8 @@
 
     .scroll-y {
       max-height: 320px;
-      overflow-y: auto;
+      overflow: auto;
+      overscroll-behavior: contain;
     }
 
     .scroll-y::-webkit-scrollbar {
@@ -265,14 +366,113 @@
       text-align: center;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1180px) {
+      .grid.three {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three .panel:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-box {
+        height: 260px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .clock {
+        font-size: 11px;
+        text-align: left;
+      }
+
       .stat-row {
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .grid,
       .grid.three {
         grid-template-columns: 1fr;
+      }
+
+      .grid.three .panel:last-child {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .brand {
+        font-size: 13px;
+      }
+
+      .brand .tag {
+        display: none;
+      }
+
+      .stat-row {
+        grid-template-columns: 1fr;
+      }
+
+      .stat {
+        padding: 14px 16px;
+      }
+
+      .stat .value {
+        font-size: 24px;
+      }
+
+      .panel {
+        padding: 16px 14px;
+      }
+
+      .panel h2 {
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .chart-box {
+        height: 230px;
+      }
+
+      table {
+        font-size: 11.5px;
+      }
+
+      th,
+      td {
+        padding-left: 6px;
+        padding-right: 6px;
+      }
+
+      #table-web-hits th:nth-child(3),
+      #table-web-hits td:nth-child(3),
+      #table-connections th:nth-child(2),
+      #table-connections td:nth-child(2) {
+        display: none;
+      }
+
+      #table-web-hits th:nth-child(1),
+      #table-web-hits td:nth-child(1),
+      #table-web-hits th:nth-child(2),
+      #table-web-hits td:nth-child(2),
+      #table-web-hits th:nth-child(4),
+      #table-web-hits td:nth-child(4),
+      #table-connections th:nth-child(1),
+      #table-connections td:nth-child(1),
+      #table-connections th:nth-child(3),
+      #table-connections td:nth-child(3) {
+        width: auto;
       }
     }
   </style>
@@ -516,9 +716,9 @@
       }
       tbody.innerHTML = rows.map(r => `
     <tr>
-      <td>${escapeHtml(r.username)}</td>
-      <td class="mono-dim">${escapeHtml(r.password ?? '')}</td>
-      <td><span class="pill">${r.hits}</span></td>
+      <td class="break-anywhere">${escapeHtml(r.username)}</td>
+      <td class="mono-dim break-anywhere">${escapeHtml(r.password ?? '')}</td>
+      <td class="nowrap"><span class="pill">${r.hits}</span></td>
     </tr>
   `).join('');
     }
@@ -534,9 +734,9 @@
         const loc = [r.city, r.country].filter(Boolean).join(', ');
         return `
     <tr>
-      <td>${escapeHtml(r.source_ip)}</td>
-      <td class="mono-dim">${loc ? escapeHtml(loc) : '&mdash;'}</td>
-      <td class="mono-dim">${fmtTime(r.started_at)}</td>
+      <td class="nowrap">${escapeHtml(r.source_ip)}</td>
+      <td class="mono-dim break-anywhere">${loc ? escapeHtml(loc) : '&mdash;'}</td>
+      <td class="mono-dim nowrap">${fmtTime(r.started_at)}</td>
     </tr>`;
       }).join('');
     }
@@ -550,12 +750,12 @@
       }
       tbody.innerHTML = rows.slice(0, 30).map(r => {
         const user = r.username ? r.username : '';
-        return `
+    return `
     <tr>
-      <td>${escapeHtml(r.source_ip)}</td>
-      <td><span class="pill">${escapeHtml(r.method)}</span> ${escapeHtml(r.path)}</td>
-      <td class="mono-dim">${user ? escapeHtml(user) : '&mdash;'}</td>
-      <td class="mono-dim">${fmtTime(r.occurred_at)}</td>
+      <td class="nowrap">${escapeHtml(r.source_ip)}</td>
+      <td class="break-anywhere"><span class="pill">${escapeHtml(r.method)}</span> ${escapeHtml(r.path)}</td>
+      <td class="mono-dim break-anywhere">${user ? escapeHtml(user) : '&mdash;'}</td>
+      <td class="mono-dim nowrap">${fmtTime(r.occurred_at)}</td>
     </tr>`;
       }).join('');
     }
@@ -569,9 +769,9 @@
       }
       tbody.innerHTML = rows.slice(0, 30).map(r => `
     <tr>
-      <td>${escapeHtml(r.source_ip)}</td>
-      <td>${escapeHtml(r.command)}</td>
-      <td class="mono-dim">${fmtTime(r.issued_at)}</td>
+      <td class="nowrap">${escapeHtml(r.source_ip)}</td>
+      <td class="break-anywhere">${escapeHtml(r.command)}</td>
+      <td class="mono-dim nowrap">${fmtTime(r.issued_at)}</td>
     </tr>
   `).join('');
     }
