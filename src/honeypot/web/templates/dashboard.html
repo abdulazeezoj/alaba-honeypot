@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>honeypot // ops console</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"
+    integrity="sha512-Y51n9mtKTVBh3Jbx5pZSJNDDMyY+yGe77DGtBPzRlgsf/YLCh13kSZ3JmfHGzYFCmOndraf0sQgfM654b7dJ3w=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root {
+      --bg: #0a0e0f;
+      --panel: #10161a;
+      --panel-border: #1c2528;
+      --line: #1c2528;
+      --text: #d7e2e4;
+      --text-dim: #6b7a7e;
+      --accent: #ff6a3d;
+      --accent-dim: #8a3d28;
+      --signal: #3ddc97;
+      --signal-dim: #1f5c41;
+      --warn: #f5c542;
+      --mono: "JetBrains Mono", "SF Mono", "IBM Plex Mono", Consolas, monospace;
+      --sans: "Inter", -apple-system, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+    }
+
+    body {
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10, 14, 15, 0.85);
+      backdrop-filter: blur(6px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .brand .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--signal);
+      box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.15);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.15);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(61, 220, 151, 0.06);
+      }
+    }
+
+    .brand .tag {
+      color: var(--text-dim);
+    }
+
+    .clock {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent);
+      opacity: 0.7;
+    }
+
+    .stat .label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .stat .value {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat.signal::before {
+      background: var(--signal);
+    }
+
+    .stat.warn::before {
+      background: var(--warn);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+
+    .panel h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel h2 .count {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .chart-box {
+      position: relative;
+      height: 240px;
+    }
+
+    .chart-box.tall {
+      height: 320px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+
+    th {
+      text-align: left;
+      color: var(--text-dim);
+      font-weight: 500;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--line);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+    }
+
+    td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      color: var(--text);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10.5px;
+      background: rgba(255, 106, 61, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(255, 106, 61, 0.25);
+    }
+
+    .mono-dim {
+      color: var(--text-dim);
+    }
+
+    .scroll-y {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .scroll-y::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scroll-y::-webkit-scrollbar-thumb {
+      background: var(--panel-border);
+      border-radius: 3px;
+    }
+
+    .empty {
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 24px 0;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .stat-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid,
+      .grid.three {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span>honeypot</span>
+      <span class="tag">// ops console</span>
+    </div>
+    <div class="clock" id="clock">--</div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="stat-row" id="stat-row">
+      <div class="stat">
+        <div class="label">SSH Connections</div>
+        <div class="value" id="s-total">&mdash;</div>
+      </div>
+      <div class="stat signal">
+        <div class="label">Unique Source IPs</div>
+        <div class="value" id="s-unique">&mdash;</div>
+      </div>
+      <div class="stat warn">
+        <div class="label">Credentials Captured</div>
+        <div class="value" id="s-creds">&mdash;</div>
+      </div>
+      <div class="stat">
+        <div class="label">Commands Logged</div>
+        <div class="value" id="s-cmds">&mdash;</div>
+      </div>
+      <div class="stat signal">
+        <div class="label">Web Hits</div>
+        <div class="value" id="s-web">&mdash;</div>
+      </div>
+      <div class="stat">
+        <div class="label">Events Last 24h</div>
+        <div class="value" id="s-24h">&mdash;</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Attack frequency <span>(hourly, last 24h)</span></h2>
+        <div class="chart-box"><canvas id="chart-timeseries"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Geographic distribution <span>(top countries)</span></h2>
+        <div class="chart-box"><canvas id="chart-geo"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid three">
+      <div class="panel">
+        <h2>Top credential pairs <span class="count" id="cred-count">0</span></h2>
+        <div class="scroll-y">
+          <table id="table-creds">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Hits</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Recent web hits <span class="count" id="web-count">0</span></h2>
+        <div class="scroll-y">
+          <table id="table-web-hits">
+            <thead>
+              <tr>
+                <th>Source IP</th>
+                <th>Request</th>
+                <th>User</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Recent SSH connections <span class="count" id="conn-count">0</span></h2>
+        <div class="scroll-y">
+          <table id="table-connections">
+            <thead>
+              <tr>
+                <th>Source IP</th>
+                <th>Location</th>
+                <th>Started</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Recent shell commands <span class="count" id="cmd-count">0</span></h2>
+      <div class="scroll-y">
+        <table id="table-commands">
+          <thead>
+            <tr>
+              <th>Source IP</th>
+              <th>Command</th>
+              <th>Issued</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const CHART_COLORS = {
+      accent: '#ff6a3d',
+      signal: '#3ddc97',
+      warn: '#f5c542',
+      grid: 'rgba(255,255,255,0.05)',
+      text: '#6b7a7e',
+    };
+
+    Chart.defaults.font.family = "'JetBrains Mono', 'SF Mono', monospace";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = CHART_COLORS.text;
+
+    function fmtTime(iso) {
+      if (!iso) return '&mdash;';
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHtml(s) {
+      if (s === null || s === undefined) return '';
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function getJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} -> ${res.status}`);
+      return res.json();
+    }
+
+    let timeseriesChart, geoChart;
+
+    function renderTimeseries(rows) {
+      const labels = rows.map(r => {
+        const d = new Date(r.bucket);
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      });
+      const data = rows.map(r => r.count);
+
+      if (timeseriesChart) {
+        timeseriesChart.data.labels = labels;
+        timeseriesChart.data.datasets[0].data = data;
+        timeseriesChart.update();
+        return;
+      }
+
+      const ctx = document.getElementById('chart-timeseries');
+      timeseriesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Connections',
+            data,
+            borderColor: CHART_COLORS.accent,
+            backgroundColor: 'rgba(255,106,61,0.12)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: CHART_COLORS.grid }, ticks: { maxTicksLimit: 8 } },
+            y: { grid: { color: CHART_COLORS.grid }, beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
+    }
+
+    function renderGeo(rows) {
+      const labels = rows.map(r => r.country);
+      const data = rows.map(r => r.count);
+      const palette = [CHART_COLORS.accent, CHART_COLORS.signal, CHART_COLORS.warn, '#5b8def', '#c77dff'];
+
+      if (geoChart) {
+        geoChart.data.labels = labels;
+        geoChart.data.datasets[0].data = data;
+        geoChart.update();
+        return;
+      }
+
+      const ctx = document.getElementById('chart-geo');
+      geoChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Connections',
+            data,
+            backgroundColor: labels.map((_, i) => palette[i % palette.length]),
+            borderRadius: 3,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: CHART_COLORS.grid }, beginAtZero: true, ticks: { precision: 0 } },
+            y: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderCredsTable(rows) {
+      const tbody = document.querySelector('#table-creds tbody');
+      document.getElementById('cred-count').textContent = rows.length;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">No credentials captured yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.username)}</td>
+      <td class="mono-dim">${escapeHtml(r.password ?? '')}</td>
+      <td><span class="pill">${r.hits}</span></td>
+    </tr>
+  `).join('');
+    }
+
+    function renderConnectionsTable(rows) {
+      const tbody = document.querySelector('#table-connections tbody');
+      document.getElementById('conn-count').textContent = rows.length;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">No connections yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.slice(0, 30).map(r => {
+        const loc = [r.city, r.country].filter(Boolean).join(', ');
+        return `
+    <tr>
+      <td>${escapeHtml(r.source_ip)}</td>
+      <td class="mono-dim">${loc ? escapeHtml(loc) : '&mdash;'}</td>
+      <td class="mono-dim">${fmtTime(r.started_at)}</td>
+    </tr>`;
+      }).join('');
+    }
+
+    function renderWebHitsTable(rows) {
+      const tbody = document.querySelector('#table-web-hits tbody');
+      document.getElementById('web-count').textContent = rows.length;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No web hits yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.slice(0, 30).map(r => {
+        const user = r.username ? r.username : '';
+        return `
+    <tr>
+      <td>${escapeHtml(r.source_ip)}</td>
+      <td><span class="pill">${escapeHtml(r.method)}</span> ${escapeHtml(r.path)}</td>
+      <td class="mono-dim">${user ? escapeHtml(user) : '&mdash;'}</td>
+      <td class="mono-dim">${fmtTime(r.occurred_at)}</td>
+    </tr>`;
+      }).join('');
+    }
+
+    function renderCommandsTable(rows) {
+      const tbody = document.querySelector('#table-commands tbody');
+      document.getElementById('cmd-count').textContent = rows.length;
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">No commands logged yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.slice(0, 30).map(r => `
+    <tr>
+      <td>${escapeHtml(r.source_ip)}</td>
+      <td>${escapeHtml(r.command)}</td>
+      <td class="mono-dim">${fmtTime(r.issued_at)}</td>
+    </tr>
+  `).join('');
+    }
+
+    async function refreshAll() {
+      try {
+        const [summary, timeseries, geo, creds, webHits, conns, cmds] = await Promise.all([
+          getJSON('/api/summary'),
+          getJSON('/api/timeseries?hours=24'),
+          getJSON('/api/geo-distribution'),
+          getJSON('/api/credentials/top?limit=20'),
+          getJSON('/api/web-hits?limit=50'),
+          getJSON('/api/connections?limit=50'),
+          getJSON('/api/commands?limit=50'),
+        ]);
+
+        document.getElementById('s-total').textContent = summary.total_connections;
+        document.getElementById('s-unique').textContent = summary.unique_ips;
+        document.getElementById('s-creds').textContent = summary.total_credentials;
+        document.getElementById('s-cmds').textContent = summary.total_commands;
+        document.getElementById('s-web').textContent = summary.total_web_hits;
+        document.getElementById('s-24h').textContent = summary.last_24h;
+
+        renderTimeseries(timeseries);
+        renderGeo(geo);
+        renderCredsTable(creds);
+        renderWebHitsTable(webHits);
+        renderConnectionsTable(conns);
+        renderCommandsTable(cmds);
+      } catch (err) {
+        console.error('dashboard refresh failed', err);
+      }
+    }
+
+    function tickClock() {
+      document.getElementById('clock').textContent = new Date().toUTCString();
+    }
+
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    refreshAll();
+    setInterval(refreshAll, 5000);
+  </script>
+
+</body>
+
+</html>
